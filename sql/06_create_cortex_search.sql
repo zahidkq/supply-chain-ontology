@@ -1,0 +1,87 @@
+/*=============================================================
+  Supply Chain Ontology — Step 6: Cortex Search Services
+  Entity search for suppliers, parts, customers, plants
+  =============================================================*/
+
+USE DATABASE SUPPLY_CHAIN_ONTOLOGY;
+USE SCHEMA CORE;
+USE WAREHOUSE COMPUTE_WH;
+
+-- Suppliers Search
+CREATE OR REPLACE CORTEX SEARCH SERVICE SUPPLIERS_SEARCH
+  ON (
+    SELECT
+      SUPPLIER_ID::TEXT AS SUPPLIER_ID,
+      SUPPLIER_NAME,
+      CATEGORY,
+      COUNTRY,
+      REGION,
+      LEAD_TIME_DAYS,
+      RELIABILITY_SCORE,
+      SUPPLIER_NAME || ' | Category: ' || CATEGORY || ' | Country: ' || COUNTRY || ' | Region: ' || REGION AS SEARCH_TEXT
+    FROM SUPPLY_CHAIN_ONTOLOGY.CORE.SUPPLIERS
+  )
+  WAREHOUSE = COMPUTE_WH
+  TARGET_LAG = '1 hour'
+  EMBEDDING_MODEL = 'snowflake-arctic-embed-m-v1.5'
+  ATTRIBUTES   SUPPLIER_NAME, CATEGORY, COUNTRY, REGION
+  SEARCH_COLUMN SEARCH_TEXT;
+
+-- Parts Search
+CREATE OR REPLACE CORTEX SEARCH SERVICE PARTS_SEARCH
+  ON (
+    SELECT
+      PART_ID::TEXT AS PART_ID,
+      PART_NAME,
+      PART_CATEGORY,
+      UNIT_OF_MEASURE,
+      STANDARD_COST,
+      WEIGHT_KG,
+      IS_CRITICAL,
+      PART_NAME || ' | Category: ' || PART_CATEGORY || ' | Critical: ' || IS_CRITICAL::TEXT AS SEARCH_TEXT
+    FROM SUPPLY_CHAIN_ONTOLOGY.CORE.PARTS
+  )
+  WAREHOUSE = COMPUTE_WH
+  TARGET_LAG = '1 hour'
+  EMBEDDING_MODEL = 'snowflake-arctic-embed-m-v1.5'
+  ATTRIBUTES   PART_NAME, PART_CATEGORY
+  SEARCH_COLUMN SEARCH_TEXT;
+
+-- Plants Search
+CREATE OR REPLACE CORTEX SEARCH SERVICE PLANTS_SEARCH
+  ON (
+    SELECT
+      PLANT_ID::TEXT AS PLANT_ID,
+      PLANT_NAME,
+      CITY,
+      COUNTRY,
+      REGION,
+      PLANT_TYPE,
+      CAPACITY_UNITS_PER_DAY,
+      PLANT_NAME || ' | City: ' || CITY || ' | Country: ' || COUNTRY || ' | Region: ' || REGION || ' | Type: ' || PLANT_TYPE AS SEARCH_TEXT
+    FROM SUPPLY_CHAIN_ONTOLOGY.CORE.PLANTS
+  )
+  WAREHOUSE = COMPUTE_WH
+  TARGET_LAG = '1 hour'
+  EMBEDDING_MODEL = 'snowflake-arctic-embed-m-v1.5'
+  ATTRIBUTES   PLANT_NAME, CITY, COUNTRY, REGION, PLANT_TYPE
+  SEARCH_COLUMN SEARCH_TEXT;
+
+-- Customers Search
+CREATE OR REPLACE CORTEX SEARCH SERVICE CUSTOMERS_SEARCH
+  ON (
+    SELECT
+      CUSTOMER_ID::TEXT AS CUSTOMER_ID,
+      CUSTOMER_NAME,
+      SEGMENT,
+      REGION,
+      COUNTRY,
+      CREDIT_LIMIT,
+      CUSTOMER_NAME || ' | Segment: ' || SEGMENT || ' | Country: ' || COUNTRY || ' | Region: ' || REGION AS SEARCH_TEXT
+    FROM SUPPLY_CHAIN_ONTOLOGY.CORE.CUSTOMERS
+  )
+  WAREHOUSE = COMPUTE_WH
+  TARGET_LAG = '1 hour'
+  EMBEDDING_MODEL = 'snowflake-arctic-embed-m-v1.5'
+  ATTRIBUTES   CUSTOMER_NAME, SEGMENT, REGION, COUNTRY
+  SEARCH_COLUMN SEARCH_TEXT;
