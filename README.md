@@ -6,29 +6,29 @@ An end-to-end **governed supply chain analytics** solution built on Snowflake, f
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│                  Streamlit Chat UI                        │
-│              (streamlit_app/streamlit_app.py)             │
+│                  Streamlit Chat UI                       │
+│              (streamlit_app/streamlit_app.py)            │
 └──────────────────┬───────────────────────────────────────┘
                    │ SNOWFLAKE.CORTEX.INVOKE_AGENT()
 ┌──────────────────▼───────────────────────────────────────┐
-│              SUPPLY_CHAIN_AGENT                           │
-│           (Cortex Agent — orchestration)                  │
+│              SUPPLY_CHAIN_AGENT                          │
+│           (Cortex Agent — orchestration)                 │
 ├──────────────┬───────────────────────────────────────────┤
 │  Cortex      │  Cortex Search Services                   │
-│  Analyst     │  ┌─────────────┐ ┌──────────────┐        │
-│  (Text→SQL)  │  │ SUPPLIERS   │ │ PARTS        │        │
-│              │  │ _SEARCH     │ │ _SEARCH      │        │
-│              │  └─────────────┘ └──────────────┘        │
-│              │  ┌─────────────┐ ┌──────────────┐        │
-│              │  │ CUSTOMERS   │ │ PLANTS       │        │
-│              │  │ _SEARCH     │ │ _SEARCH      │        │
-│              │  └─────────────┘ └──────────────┘        │
+│  Analyst     │  ┌─────────────┐ ┌──────────────┐         │
+│  (Text→SQL)  │  │ SUPPLIERS   │ │ PARTS        │         │
+│              │  │ _SEARCH     │ │ _SEARCH      │         │
+│              │  └─────────────┘ └──────────────┘         │
+│              │  ┌─────────────┐ ┌──────────────┐         │
+│              │  │ CUSTOMERS   │ │ PLANTS       │         │
+│              │  │ _SEARCH     │ │ _SEARCH      │         │
+│              │  └─────────────┘ └──────────────┘         │
 └──────┬───────┴───────────────────────────────────────────┘
        │
 ┌──────▼───────────────────────────────────────────────────┐
 │         SUPPLY_CHAIN_ANALYTICS (Semantic View)           │
 │  Canonical Metrics: OTD, Fill Rate, DOI, Landed Cost     │
-│  8 Tables • 8 Relationships • 14 Facts • 24 Dimensions  │
+│  8 Tables • 8 Relationships • 14 Facts • 24 Dimensions   │
 │  9 Metrics • 8 Verified Queries                          │
 └──────────────────────────────────────────────────────────┘
        │
@@ -37,7 +37,7 @@ An end-to-end **governed supply chain analytics** solution built on Snowflake, f
 │  CUSTOMERS │ SUPPLIERS │ PARTS │ PLANTS │ SUPPLIER_PARTS │
 │  ORDERS │ SHIPMENTS │ INVENTORY_SNAPSHOTS                │
 │  All CERTIFIED + tagged: DATA_DOMAIN, ONTOLOGY_ENTITY,   │
-│  SENSITIVITY                                              │
+│  SENSITIVITY                                             │
 └──────────────────────────────────────────────────────────┘
 ```
 
