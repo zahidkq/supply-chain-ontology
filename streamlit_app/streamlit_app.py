@@ -66,38 +66,48 @@ with st.sidebar:
 AGENT_FQN = "SUPPLY_CHAIN_ONTOLOGY.CORE.SUPPLY_CHAIN_AGENT"
 
 
-def call_agent(question: str, history: list[dict]) -> str:
+def call_agent(question: str) -> str:
     """Call the Cortex Agent and return the text response."""
-    msgs = []
-    for m in history:
-        msgs.append({"role": m["role"], "content": [{"type": "text", "text": m["content"]}]})
-    msgs.append({"role": "user", "content": [{"type": "text", "text": question}]})
+    request_obj = {
+        "messages": [
+            {
+                "role": "user",
+                "content": [{"type": "text", "text": question}]
+            }
+        ]
+    }
+    # Pass JSON string directly as a SQL string literal (escaped single quotes)
+    request_str = json.dumps(request_obj).replace("'", "''")
 
-    request = json.dumps({"messages": msgs, "model": "auto"})
     sql = f"""
-        SELECT SNOWFLAKE.CORTEX.INVOKE_AGENT(
+        SELECT SNOWFLAKE.CORTEX.DATA_AGENT_RUN(
             '{AGENT_FQN}',
-            PARSE_JSON('{request.replace("'", "''")}')
+            '{request_str}',
+            TRUE
         ) AS response
     """
     result = session.sql(sql).collect()
     raw = result[0]["RESPONSE"]
-    try:
+
+    if isinstance(raw, str):
         parsed = json.loads(raw)
-        if isinstance(parsed, dict):
-            if "message" in parsed:
-                content = parsed["message"].get("content", [])
-                texts = [c.get("text", "") for c in content if c.get("type") == "text"]
-                return "\n".join(texts) if texts else str(raw)
-            if "content" in parsed:
-                content = parsed["content"]
-                if isinstance(content, list):
-                    texts = [c.get("text", "") for c in content if c.get("type") == "text"]
-                    return "\n".join(texts) if texts else str(raw)
-                return str(content)
+    else:
+        parsed = raw
+
+    if not isinstance(parsed, dict):
         return str(raw)
-    except (json.JSONDecodeError, TypeError):
-        return str(raw)
+
+    content_list = parsed.get("content", [])
+    if isinstance(content_list, list):
+        texts = [
+            item["text"].strip()
+            for item in content_list
+            if isinstance(item, dict) and item.get("type") == "text" and item.get("text", "").strip()
+        ]
+        if texts:
+            return "\n\n".join(texts)
+
+    return str(raw)
 
 
 # ── Chat UI ──────────────────────────────────────────────────
@@ -117,22 +127,30 @@ SUGGESTIONS = {
 if not st.session_state.messages:
     selected = st.pills("Try asking:", list(SUGGESTIONS.keys()), label_visibility="collapsed")
     if selected:
-        prompt = SUGGESTIONS[selected]
-        st.session_state.messages.append({"role": "user", "content": prompt})
+        st.session_state.messages.append({"role": "user", "content": SUGGESTIONS[selected]})
         st.rerun()
 
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-if prompt := st.chat_input("Ask about your supply chain..."):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
+# Check if last message is user (needs agent response) — handles both pills and chat_input
+needs_response = (
+    st.session_state.messages
+    and st.session_state.messages[-1]["role"] == "user"
+)
 
+if needs_response:
     with st.chat_message("assistant"):
         with st.spinner("Querying the Supply Chain Agent..."):
-            response = call_agent(prompt, st.session_state.messages[:-1])
+            try:
+                question = st.session_state.messages[-1]["content"]
+                response = call_agent(question)
+            except Exception as e:
+                response = f"Error calling agent: {e}"
         st.markdown(response)
-
     st.session_state.messages.append({"role": "assistant", "content": response})
+
+if prompt := st.chat_input("Ask about your supply chain..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.rerun()
