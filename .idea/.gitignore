@@ -1,0 +1,11 @@
+# Default ignored files
+/shelf/
+/workspace.xml
+*.iml
+.idea/
+*.class
+.env
+.env.*
+gh_token.txt
+*.pat
+*.token

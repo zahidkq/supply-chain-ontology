@@ -155,4 +155,4 @@ supply-chain-ontology/
 
 ## License
 
-MIT
+Proprietary. See [LICENSE](LICENSE) for the complete terms.
